@@ -57,12 +57,10 @@ SONAUTO_API_BASE = "https://api.sonauto.ai/v1"
 
 # ── Directories ───────────────────────────────────────────────────────────────
 GENERATED_DIR = os.path.join(app.root_path, "generated")
-STORIES_DIR = os.path.join(GENERATED_DIR, "stories")
 VIDEO_DIR = os.path.join(app.root_path, "videos")
 AUDIO_DIR = os.path.join(app.root_path, "audio")
 WATERMARK_PATH = os.path.join(app.root_path, "static", "img", "watermark.png")
 os.makedirs(GENERATED_DIR, exist_ok=True)
-os.makedirs(STORIES_DIR, exist_ok=True)
 os.makedirs(VIDEO_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
@@ -500,6 +498,124 @@ def enhance_prompt():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/develop-story", methods=["POST"])
+def develop_story():
+    concept = request.form.get("concept", "").strip()
+    if not concept:
+        return jsonify({"error": "Please provide a concept."}), 400
+
+    num_scenes = int(request.form.get("scenes", 5))
+    num_scenes = max(1, min(num_scenes, 20))
+    duration_minutes = int(request.form.get("duration_minutes", 3))
+    shots_list_raw = request.form.get("shots_per_scene_list", "")
+    try:
+        shots_list = json.loads(shots_list_raw) if shots_list_raw else []
+    except (json.JSONDecodeError, TypeError):
+        shots_list = []
+    if not shots_list:
+        shots_per_scene = int(request.form.get("shots_per_scene", 4))
+        shots_list = [max(1, min(shots_per_scene, 10))] * num_scenes
+    shots_list = [max(1, min(s, 10)) for s in shots_list[:num_scenes]]
+    while len(shots_list) < num_scenes:
+        shots_list.append(4)
+    total_shots = sum(shots_list)
+
+    images = request.files.getlist("images")
+    image_parts = []
+    for img_file in images:
+        if img_file.filename and allowed_file(img_file.filename):
+            image_parts.append(prepare_image(img_file))
+
+    num_images = len(image_parts)
+    if num_images == 1:
+        ref_instruction = "Analyze the reference image to understand the main character's appearance."
+    elif num_images > 1:
+        ref_instruction = (
+            f"You are given {num_images} reference images. "
+            "Analyze ALL of them to understand each character's / element's appearance. "
+            "Label them as Reference #1, #2, etc. in order."
+        )
+    else:
+        ref_instruction = "No reference images provided — use your imagination for character design."
+
+    ref_map_instruction = ""
+    if num_images > 0:
+        ref_labels = ", ".join([f"Reference #{i+1}" for i in range(num_images)])
+        ref_map_instruction = (
+            f"\nREFERENCE IMAGE MAPPING:\n"
+            f"You have {num_images} reference images: {ref_labels}.\n"
+            "STEP 1: Analyze each reference image carefully. Identify:\n"
+            "  - Character name (give each a name if not obvious)\n"
+            "  - Species/type (human, animal, creature, object)\n"
+            "  - Exact appearance: face, hair, body, clothing/colors, accessories\n"
+            "  - Key distinguishing features\n"
+            "Output this as 'character_map' in the JSON root.\n\n"
+            "STEP 2: For each shot, specify 'ref_images' — which reference numbers appear in that shot.\n"
+            "  - Empty landscape/establishing shots = ref_images: []\n"
+            "  - Only include refs for characters ACTUALLY VISIBLE in that shot\n\n"
+            "STEP 3: In each shot's 'prompt', describe each character by their ref label:\n"
+            "  'Reference #1 (Lia — a young woman with long brown hair, wearing a white dress)'\n"
+            "  This ensures the image generator knows EXACTLY which reference to match to which character.\n"
+        )
+
+    prompt = (
+        "You are an AI Creative Director specialized in cinematic storyboards.\n\n"
+        f"{ref_instruction}\n"
+        f"{ref_map_instruction}\n"
+        f"CONCEPT: {concept}\n\n"
+        f"Create a visual storyboard with exactly {num_scenes} scenes ({total_shots} total shots).\n"
+        f"TARGET DURATION: ~{duration_minutes} minute(s). Each shot = ~5 seconds of video.\n"
+        f"Shots per scene: {', '.join(f'Scene {i+1}: {s} shots' for i, s in enumerate(shots_list))}.\n"
+        "The story must have a clear narrative arc with escalating tension and resolution.\n\n"
+        "For EACH shot:\n\n"
+        "A) IMAGE PROMPT ('prompt') — 4-8 sentences. MUST include:\n"
+        "   - Shot type, camera angle\n"
+        "   - For EACH character in the shot: 'Reference #N (Name — full appearance description)'\n"
+        "     This tells the image generator which reference image matches which character.\n"
+        "   - Character's clothing must be LOCKED — same outfit throughout the entire film.\n"
+        "     If Lia wears a white dress in Scene 1, she wears a white dress in ALL scenes.\n"
+        "   - Pose, expression, action\n"
+        "   - Environment, lighting, mood\n\n"
+        "B) VIDEO PROMPT ('video_prompt') — under 500 chars. Camera movement, character motion, FX.\n\n"
+        "C) REF_IMAGES — array of reference numbers for this shot ([] if no characters)\n\n"
+        "D) DURATION — how many seconds this shot's video should be (3-15). Choose based on importance:\n"
+        "   - Establishing/landscape shots: 3-5s\n"
+        "   - Simple actions (walking, looking): 5-7s\n"
+        "   - Key moments (proposal, kiss, reveal): 8-10s\n"
+        "   - Complex action sequences: 10-15s\n"
+        "   - The total of all shot durations should match the target movie duration\n\n"
+        "E) ACTION — 1-sentence summary\n\n"
+        "CRITICAL RULES:\n"
+        "- NEVER confuse characters. A human stays human. An octopus stays an octopus.\n"
+        "- LOCK outfits: every character wears the SAME clothing in EVERY shot. No random outfit changes.\n"
+        "- In prompts, always label characters as 'Reference #N (Name — description)'\n"
+        "- ref_images controls which reference images are shown to the AI — be precise\n"
+        "- duration must be between 3 and 15\n"
+        "- NO text, subtitles, or watermarks\n\n"
+        "Return ONLY valid JSON:\n"
+        '{"title":"...",'
+        '"character_map":[{"ref_number":1,"name":"...","type":"human/creature/etc","appearance":"full description","outfit":"exact outfit description"}],'
+        '"scenes":[{"scene_number":1,"scene_title":"...",'
+        '"description":"...",'
+        '"shots":[{"shot_number":1,"action":"...",'
+        '"ref_images":[1,2],"duration":5,'
+        '"prompt":"Reference #1 (Name — appearance) does X. Reference #2 (Name — appearance) does Y. Environment...",'
+        '"video_prompt":"under 500 chars"}]}]}'
+    )
+
+    contents = [prompt] + image_parts
+
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
+        )
+        story = json.loads(response.text)
+        return jsonify(story)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/generate-shot", methods=["POST"])
 def generate_shot():
@@ -610,50 +726,13 @@ def generate_shot():
 
 
 # ── Kling: Image-to-Video (kling-v3) ─────────────────────────────────────────
-def _strip_data_url_base64(raw: str) -> str:
-    s = (raw or "").strip()
-    if s.startswith("data:") and "base64," in s:
-        return s.split("base64,", 1)[1].strip()
-    return s
-
-
-def _bytes_to_standard_jpeg(img_bytes: bytes):
-    """Decode any supported image bytes and re-encode as baseline RGB JPEG (Kling-friendly)."""
-    try:
-        img = Image.open(io.BytesIO(img_bytes))
-        if img.mode in ("RGBA", "P", "LA"):
-            img = img.convert("RGB")
-        elif img.mode != "RGB":
-            img = img.convert("RGB")
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=90)
-        return buf.getvalue()
-    except Exception:
-        return None
-
-
-def _normalize_raw_base64_to_jpeg_b64(raw: str):
-    """Accept raw or data-URL base64; return standard JPEG as ascii base64."""
-    s = _strip_data_url_base64(raw)
-    if not s:
-        return None
-    try:
-        img_bytes = base64.b64decode(s, validate=False)
-    except Exception:
-        return None
-    out = _bytes_to_standard_jpeg(img_bytes)
-    if not out:
-        return None
-    return base64.b64encode(out).decode("ascii")
-
-
 def _load_image_b64(image_path="", image_b64_raw=""):
     """Load an image from path or raw base64 and return clean JPEG base64."""
     if image_path and os.path.exists(image_path):
         with open(image_path, "rb") as f:
             img_data = f.read()
     elif image_b64_raw:
-        img_data = base64.b64decode(_strip_data_url_base64(image_b64_raw))
+        img_data = base64.b64decode(image_b64_raw)
     else:
         return None
 
@@ -735,11 +814,8 @@ def generate_shot_video():
 
     # First frame: last frame from previous shot (continuity within scene)
     if last_frame_b64:
-        norm_last = _normalize_raw_base64_to_jpeg_b64(last_frame_b64)
-        if not norm_last:
-            return jsonify({"error": "Invalid last_frame image (could not normalize to JPEG)."}), 400
         img_idx += 1
-        image_list.append({"image_url": norm_last, "type": "first_frame"})
+        image_list.append({"image_url": last_frame_b64, "type": "first_frame"})
         prompt_parts.append(f"Continue from <<<image_{img_idx}>>> (previous shot ending).")
 
     # Storyboard image (scene composition reference)
@@ -752,11 +828,8 @@ def generate_shot_video():
     for ref_b64 in ref_images_b64[:5]:
         if len(image_list) >= 7:
             break
-        norm_ref = _normalize_raw_base64_to_jpeg_b64(ref_b64)
-        if not norm_ref:
-            return jsonify({"error": "Invalid reference image (could not normalize to JPEG)."}), 400
         img_idx += 1
-        image_list.append({"image_url": norm_ref})
+        image_list.append({"image_url": ref_b64})
         prompt_parts.append(f"<<<image_{img_idx}>>> is a character/style reference — keep characters identical.")
 
     if not image_list:
@@ -822,10 +895,6 @@ def generate_transition():
     if not start_b64:
         return jsonify({"error": "No start frame"}), 400
 
-    norm_start = _normalize_raw_base64_to_jpeg_b64(start_b64)
-    if not norm_start:
-        return jsonify({"error": "Invalid start frame image."}), 400
-
     try:
         end_image_b64 = _load_image_b64(end_path, end_b64) if (end_path or end_b64) else None
     except Exception:
@@ -836,7 +905,7 @@ def generate_transition():
 
     body = {
         "model_name": "kling-v3",
-        "image": norm_start,
+        "image": start_b64,
         "image_tail": end_image_b64,
         "prompt": prompt,
         "duration": str(duration),
@@ -888,14 +957,10 @@ def generate_scene_video():
         storyboard_b64 = None
 
     image_list = []
-    norm_prev = None
     if prev_frame_b64:
-        norm_prev = _normalize_raw_base64_to_jpeg_b64(prev_frame_b64)
-        if not norm_prev:
-            return jsonify({"error": "Invalid prev_last_frame image."}), 400
-        image_list.append({"image_url": norm_prev, "type": "first_frame"})
+        image_list.append({"image_url": prev_frame_b64, "type": "first_frame"})
     if storyboard_b64:
-        if not norm_prev:
+        if not prev_frame_b64:
             image_list.append({"image_url": storyboard_b64, "type": "first_frame"})
         else:
             image_list.append({"image_url": storyboard_b64})
@@ -917,7 +982,7 @@ def generate_scene_video():
             "duration": str(secs_per_shot),
         })
 
-    if norm_prev and storyboard_b64:
+    if prev_frame_b64 and storyboard_b64:
         top_prompt = (
             "Continue from <<<image_1>>> (previous scene's last frame). "
             "Use <<<image_2>>> as character/style reference to keep appearance consistent."
@@ -1044,9 +1109,6 @@ def extract_frame_endpoint(task_id):
     frame_data = extract_last_frame(fpath)
     if not frame_data:
         return jsonify({"error": "Failed to extract frame"}), 500
-    std = _bytes_to_standard_jpeg(frame_data)
-    if std:
-        frame_data = std
     return jsonify({"frame_b64": base64.b64encode(frame_data).decode("ascii")})
 
 
