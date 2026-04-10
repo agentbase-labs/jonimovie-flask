@@ -500,7 +500,6 @@ def enhance_prompt():
         return jsonify({"error": str(e)}), 500
 
 
-ע
 
 @app.route("/generate-shot", methods=["POST"])
 def generate_shot():
