@@ -578,7 +578,7 @@ def generate_shot():
                 "Characters must be identical to references. No text or watermarks."
             )
         response = gemini_client.models.generate_content(
-            model="gemini-2.5-flash-image",
+            model="gemini-1.5-flash",
             contents=[full_prompt] + image_parts,
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],
@@ -1333,7 +1333,7 @@ def generate():
             "4. Always output a generated image."
         )
         response = gemini_client.models.generate_content(
-            model="gemini-2.5-flash-image",
+            model="gemini-1.5-flash",
             contents=[f"Edit this image: {prompt}. No text on image.", image_part],
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],
