@@ -47,7 +47,7 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 # ── API Keys ──────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = "AIzaSyDzeLW5tpSja7L00wOyB3c9BXUhJCRMA6w"
+GEMINI_API_KEY = "AIzaSyDIspXdYFz_R53f1N2j4S-yBClRHiaJdGE"
 KLING_ACCESS_KEY = "AByeF9Lgt8rLnFkYgFgaEagCdM88JKMh"
 KLING_SECRET_KEY = "9Hrb4JkbdYPYKbQBkHpkDYgDFbLPgbBY"
 SHOTSTACK_API_KEY = "g0ATAPxUTitypnxqIblbbeQdzmusJERZV2mXe0u8"
@@ -279,7 +279,7 @@ def enhance_song_prompt():
 
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=[prompt],
             config=types.GenerateContentConfig(response_mime_type="application/json", system_instruction=system_instruction),
         )
@@ -462,7 +462,7 @@ def enhance_prompt():
 
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
