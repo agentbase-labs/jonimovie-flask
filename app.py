@@ -47,13 +47,13 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 # ── API Keys ──────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = "AIzaSyDzeLW5tpSja7L00wOyB3c9BXUhJCRMA6w"
-KLING_ACCESS_KEY = "AByeF9Lgt8rLnFkYgFgaEagCdM88JKMh"
-KLING_SECRET_KEY = "9Hrb4JkbdYPYKbQBkHpkDYgDFbLPgbBY"
-SHOTSTACK_API_KEY = "g0ATAPxUTitypnxqIblbbeQdzmusJERZV2mXe0u8"
-SHOTSTACK_ENV = "v1"  # production
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+KLING_ACCESS_KEY = os.getenv("KLING_ACCESS_KEY", "").strip()
+KLING_SECRET_KEY = os.getenv("KLING_SECRET_KEY", "").strip()
+SHOTSTACK_API_KEY = os.getenv("SHOTSTACK_API_KEY", "").strip()
+SHOTSTACK_ENV = os.getenv("SHOTSTACK_ENV", "v1").strip()
 SONAUTO_API_KEY = os.getenv("SONAUTO_API_KEY", "").strip()
-SONAUTO_API_BASE = "https://api.sonauto.ai/v1"
+SONAUTO_API_BASE = os.getenv("SONAUTO_API_BASE", "https://api.sonauto.ai/v1").strip()
 
 # ── Directories ───────────────────────────────────────────────────────────────
 GENERATED_DIR = os.path.join(app.root_path, "generated")
