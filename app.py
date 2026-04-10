@@ -47,7 +47,7 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 # ── API Keys ──────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = "AIzaSyDIspXdYFz_R53f1N2j4S-yBClRHiaJdGE"
+GEMINI_API_KEY = "AIzaSyDzeLW5tpSja7L00wOyB3c9BXUhJCRMA6w"
 KLING_ACCESS_KEY = "AByeF9Lgt8rLnFkYgFgaEagCdM88JKMh"
 KLING_SECRET_KEY = "9Hrb4JkbdYPYKbQBkHpkDYgDFbLPgbBY"
 SHOTSTACK_API_KEY = "g0ATAPxUTitypnxqIblbbeQdzmusJERZV2mXe0u8"
