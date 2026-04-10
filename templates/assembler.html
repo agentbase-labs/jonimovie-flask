@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assembler — JONI Movie Maker</title>
+  <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/style.css?t={{ cache_bust }}">
+  <link rel="stylesheet" href="/static/css/assembler.css?t={{ cache_bust }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="animated-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+    <div class="gradient-orb orb-4"></div>
+    <div class="gradient-orb orb-5"></div>
+  </div>
+  <div class="app">
+    <header class="hero-header">
+      <nav class="top-nav">
+        <a href="/">Movie Maker</a>
+        <a href="/assembler" class="nav-active">Assembler</a>
+      </nav>
+      <div class="hero-logo">
+        <img src="/static/img/logo.svg" alt="JONI" class="logo-img">
+      </div>
+      <h1 class="hero-title"><span class="accent">Assembler</span></h1>
+      <p class="hero-sub">Drag & drop videos, reorder them, and combine into one final film</p>
+    </header>
+
+    <main class="assembler-main">
+      <div class="assembler-toolbar">
+        <div class="toolbar-left">
+          <button class="btn-action" id="addUrlBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Add by URL
+          </button>
+          <button class="btn-action" id="addFileBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload File
+          </button>
+          <button class="btn-action" id="loadLibraryBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            From Library
+          </button>
+          <input type="file" id="fileUploadInput" accept="video/*" multiple hidden>
+        </div>
+        <div class="toolbar-right">
+          <span class="clip-count" id="clipCount">0 clips</span>
+          <button class="btn-generate-videos" id="assembleBtn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Assemble
+          </button>
+        </div>
+      </div>
+
+      <!-- URL Modal -->
+      <div class="modal hidden" id="urlModal">
+        <div class="modal-content">
+          <h3>Add Video by URL</h3>
+          <input type="text" id="urlInput" placeholder="https://example.com/video.mp4">
+          <div class="modal-actions">
+            <button class="btn-action" id="urlCancel">Cancel</button>
+            <button class="btn-generate" id="urlAdd" style="width:auto;padding:.5rem 1.5rem">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Library Modal -->
+      <div class="modal hidden" id="libraryModal">
+        <div class="modal-content modal-wide">
+          <h3>Video Library</h3>
+          <div class="library-grid" id="libraryGrid">
+            <p class="text-muted">Loading…</p>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-action" id="libraryClose">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Settings -->
+      <div class="output-settings">
+        <div class="setting-group">
+          <label>Aspect Ratio</label>
+          <div class="ratio-btns" id="ratioBtns">
+            <button class="ratio-btn" data-ratio="1:1">1:1</button>
+            <button class="ratio-btn active" data-ratio="16:9">16:9</button>
+            <button class="ratio-btn" data-ratio="9:16">9:16</button>
+            <button class="ratio-btn" data-ratio="5:4">5:4</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label>Fit Mode</label>
+          <select id="fitMode">
+            <option value="pad">Fit with border</option>
+            <option value="crop">Crop to fill</option>
+            <option value="stretch">Stretch to fit</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Audio Track -->
+      <div class="audio-panel" id="audioPanel">
+        <div class="audio-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span>Background Music</span>
+        </div>
+        <div class="audio-empty" id="audioEmpty">
+          <button class="btn-action" id="addAudioBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add MP3
+          </button>
+          <input type="file" id="audioFileInput" accept="audio/*" hidden>
+        </div>
+        <div class="audio-track hidden" id="audioTrack">
+          <div class="audio-info">
+            <span class="audio-name" id="audioName">—</span>
+            <audio id="audioPreview" controls preload="metadata"></audio>
+          </div>
+          <div class="audio-controls">
+            <div class="volume-row">
+              <label>Music volume</label>
+              <input type="range" id="musicVolume" min="0" max="100" value="80">
+              <span class="vol-value" id="musicVolVal">80%</span>
+            </div>
+            <div class="volume-row">
+              <label>Video sound volume</label>
+              <input type="range" id="videoVolume" min="0" max="100" value="100">
+              <span class="vol-value" id="videoVolVal">100%</span>
+            </div>
+          </div>
+          <button class="tl-clip-remove" id="removeAudioBtn" title="Remove">&times;</button>
+        </div>
+      </div>
+
+      <!-- Timeline / Drop Zone -->
+      <div class="timeline-area" id="timelineArea">
+        <div class="timeline-empty" id="timelineEmpty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+            <line x1="7" y1="2" x2="7" y2="22"/>
+            <line x1="17" y1="2" x2="17" y2="22"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+          </svg>
+          <span>Drop video files here or <strong>click to browse</strong></span>
+        </div>
+        <div class="timeline-clips" id="timelineClips"></div>
+      </div>
+
+      <!-- Progress -->
+      <div id="asmProgress" class="progress-section hidden">
+        <div class="progress-bar"><div class="progress-fill" id="asmProgressFill"></div></div>
+        <p class="progress-text" id="asmProgressText">Assembling…</p>
+      </div>
+
+      <!-- Result -->
+      <div id="asmResult" class="final-film-card hidden">
+        <h2>Assembled Video</h2>
+        <div class="final-video-wrap" id="asmVideoWrap"></div>
+        <div class="final-actions" id="asmActions">
+          <a id="asmDownloadLink" class="btn-generate-videos" href="#" target="_blank">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
+        </div>
+      </div>
+
+      <div id="asmToast" class="toast hidden"></div>
+    </main>
+  </div>
+
+  <script src="/static/js/assembler.js?t={{ cache_bust }}"></script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JONI Movie Maker</title>
+  <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/style.css?t={{ cache_bust }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="animated-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+    <div class="gradient-orb orb-4"></div>
+    <div class="gradient-orb orb-5"></div>
+  </div>
+  <div class="app">
+
+    <!-- ==================== HERO HEADER ==================== -->
+    <header class="hero-header">
+      <nav class="top-nav">
+        <a href="/" class="nav-active">Movie Maker</a>
+        <a href="/assembler">Assembler</a>
+      </nav>
+      <div class="hero-logo">
+        <img src="/static/img/logo.svg" alt="JONI" class="logo-img">
+      </div>
+      <h1 class="hero-title">Script to <span class="accent">Video</span></h1>
+      <p class="hero-sub">Turn your idea into a cinematic AI-generated film in minutes</p>
+    </header>
+
+    <!-- ==================== STEP 1: INPUT (centered, clean) ==================== -->
+    <div id="step1" class="step-content">
+      <div class="input-card">
+        <!-- Combined prompt + image area -->
+        <div class="prompt-combo">
+          <div class="prompt-combo-drop" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/*" multiple hidden>
+            <div class="combo-drop-empty" id="comboDropEmpty">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+            </div>
+            <div class="ref-thumbs" id="refThumbs"></div>
+          </div>
+          <div class="prompt-combo-text">
+            <textarea id="conceptInput" rows="4" placeholder="Try describing your vision in detail. You can use style modifiers to enhance your expression..."></textarea>
+            <button class="btn-enhance" id="enhanceBtn" title="AI expands your idea into a full production script">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              <span class="enhance-text">Enhance with AI</span>
+              <span class="enhance-loader hidden"><span class="spinner"></span></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom controls bar -->
+        <div class="prompt-bottom-bar">
+          <div class="prompt-bar-left">
+            <div class="control-item">
+              <label>Duration</label>
+              <select id="movieDuration">
+                <option value="1">~1 min</option>
+                <option value="2">~2 min</option>
+                <option value="3" selected>~3 min</option>
+                <option value="5">~5 min</option>
+                <option value="7">~7 min</option>
+                <option value="10">~10 min</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <label>Scenes</label>
+              <div class="scene-stepper">
+                <button class="stepper-btn" id="sceneMinus">−</button>
+                <input type="number" id="sceneCount" value="5" min="1" max="20">
+                <button class="stepper-btn" id="scenePlus">+</button>
+              </div>
+            </div>
+            <span class="scene-hint" id="sceneHint">5 scenes — 20 shots — ~3 min</span>
+            <span class="auto-hint">Enhance with AI auto-fills scenes & timing</span>
+          </div>
+          <div class="prompt-bar-right">
+            <button id="startBtn" class="btn-primary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span class="btn-text">Generate Movie</span>
+              <span class="btn-loader hidden"><span class="spinner"></span> Working…</span>
+            </button>
+          </div>
+        </div>
+        <div class="per-scene-shots" id="perSceneShots"></div>
+
+        <!-- Advanced Settings (collapsed) -->
+        <details class="advanced-settings" id="advancedSettings">
+          <summary>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Advanced Settings
+          </summary>
+          <div class="adv-content">
+            <div class="adv-row">
+              <div class="setting-group">
+                <label>Aspect Ratio</label>
+                <div class="ratio-btns" id="advRatioBtns">
+                  <button class="ratio-btn" data-ratio="1:1">1:1</button>
+                  <button class="ratio-btn active" data-ratio="16:9">16:9</button>
+                  <button class="ratio-btn" data-ratio="9:16">9:16</button>
+                  <button class="ratio-btn" data-ratio="5:4">5:4</button>
+                </div>
+              </div>
+              <div class="setting-group">
+                <label>Fit Mode</label>
+                <select id="advFitMode">
+                  <option value="pad">Fit with border</option>
+                  <option value="crop">Crop to fill</option>
+                  <option value="stretch">Stretch to fit</option>
+                </select>
+              </div>
+              <div class="setting-group">
+                <label>Watermark</label>
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="advWatermark" checked>
+                  <span>JONI</span>
+                </div>
+              </div>
+            </div>
+            <div class="adv-audio">
+              <div class="audio-header-row">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Background Music</span>
+              </div>
+              <div class="audio-upload-actions">
+                <div id="advAudioEmpty">
+                  <button class="btn-action" id="advAddAudioBtn">+ Add MP3</button>
+                  <input type="file" id="advAudioInput" accept="audio/*" hidden>
+                </div>
+                <label class="toggle-wrap ai-song-toggle-inline">
+                  <input type="checkbox" id="enableSongGen">
+                  <span>Generate AI Song</span>
+                </label>
+              </div>
+              <div id="songAiBody" class="song-ai-body hidden">
+                <textarea id="songPromptInput" rows="2" placeholder="AI song prompt will be generated automatically from your video prompt."></textarea>
+                <input id="songTagsInput" type="text" placeholder="Song tags (optional): pop, cinematic, emotional">
+                <p class="song-ai-note">Uses your video prompt, generates MP3 automatically, and assembles with music at 100% volume.</p>
+              </div>
+              <div class="audio-track-row hidden" id="advAudioTrack">
+                <div class="audio-info-row">
+                  <span class="audio-name" id="advAudioName">—</span>
+                  <audio id="advAudioPreview" controls preload="metadata"></audio>
+                  <button class="tl-clip-remove" id="advRemoveAudio">&times;</button>
+                </div>
+                <div class="volume-controls">
+                  <div class="volume-row">
+                    <label>Music</label>
+                    <input type="range" id="advMusicVol" min="0" max="100" value="80">
+                    <span class="vol-value" id="advMusicVolVal">80%</span>
+                  </div>
+                  <div class="volume-row">
+                    <label>Video</label>
+                    <input type="range" id="advVideoVol" min="0" max="100" value="100">
+                    <span class="vol-value" id="advVideoVolVal">100%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ==================== PIPELINE STEPS ==================== -->
+    <div class="pipeline-steps">
+      <div class="step active" data-step="1"><span class="step-num">1</span> Story</div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><span class="step-num">2</span> Storyboard</div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><span class="step-num">3</span> Video Clips</div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><span class="step-num">4</span> Final Film</div>
+    </div>
+
+    <main>
+      <!-- ==================== PROGRESS ==================== -->
+      <div id="progressSection" class="progress-section hidden">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <p class="progress-text" id="progressText">Developing story…</p>
+      </div>
+      <div id="waitingSongPlayer" class="waiting-song-player hidden">
+        <div class="waiting-song-head">
+          <span class="waiting-song-badge">AI Song</span>
+          <span id="waitingSongLabel">Play while rendering</span>
+        </div>
+        <audio id="waitingSongAudio" controls preload="metadata"></audio>
+      </div>
+
+      <!-- ==================== LOCKED CREATION INPUT (VIEW ONLY) ==================== -->
+      <div id="creationReference" class="creation-reference hidden">
+        <div class="creation-reference-head">
+          <h3>Creation Input</h3>
+          <span class="creation-lock-badge">Locked · View only</span>
+        </div>
+        <div class="creation-reference-grid">
+          <div class="creation-reference-block">
+            <label>Original Prompt</label>
+            <textarea id="creationPromptView" readonly></textarea>
+          </div>
+          <div class="creation-reference-block">
+            <label>Uploaded References</label>
+            <div id="creationImageRefs" class="creation-image-refs"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 2: STORYBOARD ==================== -->
+      <div id="step2" class="step-content hidden">
+        <div class="storyboard-header">
+          <h2 id="storyTitle"></h2>
+          <div class="storyboard-actions">
+            <button id="downloadImagesBtn" class="btn-action">Download Images</button>
+            <button id="downloadVideosBtn" class="btn-action hidden">Download Videos</button>
+          </div>
+        </div>
+        <div id="scenesContainer"></div>
+      </div>
+
+      <!-- ==================== STEP 3: VIDEO CLIPS ==================== -->
+      <div id="step3" class="step-content hidden">
+        <div class="storyboard-header">
+          <h2>Video Clips</h2>
+        </div>
+        <div id="videoClipsContainer" class="video-clips-grid"></div>
+
+        <div class="film-settings" id="filmSettings">
+          <h3>Final Film Settings</h3>
+          <div class="film-settings-grid">
+            <div class="setting-group">
+              <label>Aspect Ratio</label>
+              <div class="ratio-btns" id="mainRatioBtns">
+                <button class="ratio-btn" data-ratio="1:1">1:1</button>
+                <button class="ratio-btn active" data-ratio="16:9">16:9</button>
+                <button class="ratio-btn" data-ratio="9:16">9:16</button>
+                <button class="ratio-btn" data-ratio="5:4">5:4</button>
+              </div>
+            </div>
+            <div class="setting-group">
+              <label>Fit Mode</label>
+              <select id="mainFitMode">
+                <option value="pad">Fit with border</option>
+                <option value="crop">Crop to fill</option>
+                <option value="stretch">Stretch to fit</option>
+              </select>
+            </div>
+            <div class="setting-group">
+              <label>Watermark</label>
+              <div class="toggle-wrap">
+                <input type="checkbox" id="mainWatermark" checked>
+                <span>JONI logo</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="film-audio-section">
+            <div class="audio-header-row">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <span>Background Music</span>
+            </div>
+            <div id="mainAudioEmpty">
+              <button class="btn-action" id="mainAddAudioBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add MP3
+              </button>
+              <input type="file" id="mainAudioInput" accept="audio/*" hidden>
+            </div>
+            <div class="audio-track-row hidden" id="mainAudioTrack">
+              <div class="audio-info-row">
+                <span class="audio-name" id="mainAudioName">—</span>
+                <audio id="mainAudioPreview" controls preload="metadata"></audio>
+                <button class="tl-clip-remove" id="mainRemoveAudio" title="Remove">&times;</button>
+              </div>
+              <div class="volume-controls">
+                <div class="volume-row">
+                  <label>Music volume</label>
+                  <input type="range" id="mainMusicVol" min="0" max="100" value="80">
+                  <span class="vol-value" id="mainMusicVolVal">80%</span>
+                </div>
+                <div class="volume-row">
+                  <label>Video sound</label>
+                  <input type="range" id="mainVideoVol" min="0" max="100" value="100">
+                  <span class="vol-value" id="mainVideoVolVal">100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button id="assembleBtn" class="btn-primary" disabled style="align-self:flex-end">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Assemble Final Film
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== STEP 4: FINAL FILM ==================== -->
+      <div id="step4" class="step-content hidden">
+        <div class="final-film-card">
+          <h2>Final Film</h2>
+          <div id="finalVideoWrap" class="final-video-wrap">
+            <div class="shot-placeholder" id="finalPlaceholder">
+              <div class="spinner"></div>
+              <span>Assembling your film…</span>
+            </div>
+          </div>
+          <div class="final-actions hidden" id="finalActions">
+            <a id="finalDownloadLink" class="btn-primary" href="#" target="_blank" style="text-decoration:none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Film
+            </a>
+            <button class="btn-action" onclick="location.reload()">Start Over</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="errorToast" class="toast hidden"></div>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js?t={{ cache_bust }}"></script>
+</body>
+</html>
