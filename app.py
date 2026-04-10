@@ -279,7 +279,7 @@ def enhance_song_prompt():
 
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=[prompt],
             config=types.GenerateContentConfig(response_mime_type="application/json", system_instruction=system_instruction),
         )
@@ -462,7 +462,7 @@ def enhance_prompt():
 
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
@@ -578,7 +578,7 @@ def generate_shot():
                 "Characters must be identical to references. No text or watermarks."
             )
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash-image",
             contents=[full_prompt] + image_parts,
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],
@@ -1333,7 +1333,7 @@ def generate():
             "4. Always output a generated image."
         )
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash-image",
             contents=[f"Edit this image: {prompt}. No text on image.", image_part],
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],
